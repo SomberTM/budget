@@ -1,10 +1,11 @@
 package models
 
 type BudgetDefinition struct {
-	Id            string `json:"id"`
-	UserId        string `json:"user_id"`
-	BudgetId      string `json:"budget_id"`
-	MaxAllocation int64  `json:"max_allocation"`
+	Id         string `json:"id"`
+	UserId     string `json:"user_id"`
+	BudgetId   string `json:"budget_id"`
+	Name       string `json:"name"`
+	Allocation int64  `json:"allocation"`
 }
 
 func NewBudgetDefinition(budgetId string) BudgetDefinition {
@@ -29,7 +30,12 @@ func (bd *BudgetDefinition) SetBudgetId(budgetId string) *BudgetDefinition {
 	return bd
 }
 
-func (bd *BudgetDefinition) SetMaxAllocation(maxAllocation int64) *BudgetDefinition {
-	bd.MaxAllocation = maxAllocation
+func (bd *BudgetDefinition) SetName(name string) *BudgetDefinition {
+	bd.Name = name
+	return bd
+}
+
+func (bd *BudgetDefinition) SetAllocation(maxAllocation int64) *BudgetDefinition {
+	bd.Allocation = maxAllocation
 	return bd
 }

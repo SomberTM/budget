@@ -1,10 +1,10 @@
-drop table if exists transaction_categories_to_budget_definitions;
-drop table if exists transaction_categories;
-drop table if exists budget_definitions;
-drop table if exists budgets;
-drop table if exists plaid_items;
-drop table if exists sessions;
-drop table if exists users;
+-- drop table if exists transaction_categories_to_budget_definitions;
+-- drop table if exists transaction_categories;
+-- drop table if exists budget_definitions;
+-- drop table if exists budgets;
+-- drop table if exists plaid_items;
+-- drop table if exists sessions;
+-- drop table if exists users;
 
 create table if not exists users (
     id uuid primary key default gen_random_uuid(),
@@ -36,7 +36,8 @@ create table if not exists budget_definitions (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references users(id) on delete cascade,
     budget_id uuid not null references budgets(id) on delete cascade,
-    max_allocation int not null
+    name text not null,
+    allocation int not null
 );
 
 create table if not exists transaction_categories (
@@ -48,9 +49,8 @@ create table if not exists transaction_categories (
 
 create table if not exists transaction_categories_to_budget_definitions (
     id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references users(id) on delete cascade,
-    target_definition_id uuid not null references budget_definitions(id) on delete cascade,
-    source_category_id uuid not null references transaction_categories(id) on delete cascade
+    definition_id uuid not null references budget_definitions(id) on delete cascade,
+    category_id uuid not null references transaction_categories(id) on delete cascade
 );
 
 -- Seed categories based off of csv found here https://plaid.com/docs/api/products/transactions/#categoriesget

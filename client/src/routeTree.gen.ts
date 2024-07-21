@@ -12,7 +12,9 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
+import { Route as BudgetingIndexImport } from './routes/budgeting/index'
 import { Route as LinkPublicTokenImport } from './routes/link/$publicToken'
+import { Route as BudgetingBudgetIdImport } from './routes/budgeting/$budgetId'
 import { Route as AuthLogoutImport } from './routes/auth/logout'
 import { Route as AuthLoginImport } from './routes/auth/login'
 import { Route as AccountsAccountIdImport } from './routes/accounts/$accountId'
@@ -24,8 +26,18 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const BudgetingIndexRoute = BudgetingIndexImport.update({
+  path: '/budgeting/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const LinkPublicTokenRoute = LinkPublicTokenImport.update({
   path: '/link/$publicToken',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const BudgetingBudgetIdRoute = BudgetingBudgetIdImport.update({
+  path: '/budgeting/$budgetId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -76,11 +88,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLogoutImport
       parentRoute: typeof rootRoute
     }
+    '/budgeting/$budgetId': {
+      id: '/budgeting/$budgetId'
+      path: '/budgeting/$budgetId'
+      fullPath: '/budgeting/$budgetId'
+      preLoaderRoute: typeof BudgetingBudgetIdImport
+      parentRoute: typeof rootRoute
+    }
     '/link/$publicToken': {
       id: '/link/$publicToken'
       path: '/link/$publicToken'
       fullPath: '/link/$publicToken'
       preLoaderRoute: typeof LinkPublicTokenImport
+      parentRoute: typeof rootRoute
+    }
+    '/budgeting/': {
+      id: '/budgeting/'
+      path: '/budgeting'
+      fullPath: '/budgeting'
+      preLoaderRoute: typeof BudgetingIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -93,7 +119,9 @@ export const routeTree = rootRoute.addChildren({
   AccountsAccountIdRoute,
   AuthLoginRoute,
   AuthLogoutRoute,
+  BudgetingBudgetIdRoute,
   LinkPublicTokenRoute,
+  BudgetingIndexRoute,
 })
 
 /* prettier-ignore-end */
@@ -108,7 +136,9 @@ export const routeTree = rootRoute.addChildren({
         "/accounts/$accountId",
         "/auth/login",
         "/auth/logout",
-        "/link/$publicToken"
+        "/budgeting/$budgetId",
+        "/link/$publicToken",
+        "/budgeting/"
       ]
     },
     "/": {
@@ -123,8 +153,14 @@ export const routeTree = rootRoute.addChildren({
     "/auth/logout": {
       "filePath": "auth/logout.tsx"
     },
+    "/budgeting/$budgetId": {
+      "filePath": "budgeting/$budgetId.tsx"
+    },
     "/link/$publicToken": {
       "filePath": "link/$publicToken.tsx"
+    },
+    "/budgeting/": {
+      "filePath": "budgeting/index.tsx"
     }
   }
 }

@@ -62,11 +62,14 @@ func init() {
 	repos.Users = repositories.NewDatabaseUsersRepository(db)
 	repos.PlaidItems = repositories.NewDatabasePlaidItemsRepository(db)
 	repos.Sessions = repositories.NewDatabaseSessionsRepository(db)
+	repos.TransactionCategories = repositories.NewDatabaseTransactionCategoriesRepository(db)
+	repos.Budgeting = repositories.NewDatabaseBudgetingRepository(db)
 	env.Repositories = repos
 
 	servs := services.GetNilServices()
 	servs.Plaid = services.NewPlaidFreeService(plaid.GetApiService(), repos.PlaidItems)
 	servs.Users = services.NewSessionStrategyUsersService(repos.Users, repos.Sessions)
+	servs.Budgeting = services.NewPrimaryBudgetingService(plaid.GetApiService(), repos.Budgeting, servs.Plaid)
 	env.Services = servs
 
 	router = gin.Default()
@@ -86,12 +89,22 @@ func main() {
 
 		authorized.GET("/user-accounts", environmentInjector(controllers.GetAccounts))
 		// authorized.GET("/transactions", controllers.GetTransactions)
+		authorized.GET("/ubudgeting/budgets", environmentInjector(controllers.MyBudgets))
+		authorized.POST("/ubudgeting/budgets", environmentInjector(controllers.CreateBudget))
+		authorized.GET("/ubudgeting/budgets/:budgetId/breakdown", environmentInjector(controllers.BudgetBreakdown))
+		authorized.POST("/ubudgeting/budgets/:budgetId/definitions", environmentInjector(controllers.CreateBudgetDefinition))
 	}
 
 	authorization := router.Group("/auth")
 	{
 		authorization.POST("/login", environmentInjector(controllers.Login))
 		authorization.POST("/logout", environmentInjector(controllers.Logout))
+	}
+
+	budgeting := router.Group("/budgeting")
+	{
+		budgeting.GET("/categories", environmentInjector(controllers.TransactionCategories))
+
 	}
 
 	router.Run("localhost:8080")

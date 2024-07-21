@@ -17,3 +17,16 @@ export function snakeCaseToTitleCase(snakeCase: string): string {
 
   return result;
 }
+
+export function groupBy<T>(
+  items: T[],
+  keySelector: (item: T) => string
+): Record<string, T[]> {
+  const groups: Record<string, T[]> = {};
+  for (const item of items) {
+    const key = keySelector(item);
+    if (!groups[key]) groups[key] = [item];
+    else groups[key].push(item);
+  }
+  return groups;
+}

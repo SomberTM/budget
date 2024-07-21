@@ -7,6 +7,7 @@ import "./index.css";
 import { routeTree } from "./routeTree.gen";
 import { ThemeProvider } from "./components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +29,9 @@ if (!rootElement.innerHTML) {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system">
-          <RouterProvider router={router} />
+          <TooltipProvider delayDuration={250}>
+            <RouterProvider router={router} />
+          </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </StrictMode>

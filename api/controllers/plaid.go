@@ -38,8 +38,9 @@ func ExchangePublicToken(e *environment.Environment, c *gin.Context) {
 
 	var request ExchangePublicTokenRequest
 	if err := c.BindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		log.Println("Error exchanging public token:", err.Error())
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
 	}
 
 	e.Services.Plaid.ExchangePublicToken(c.Request.Context(), user, request.PublicToken)

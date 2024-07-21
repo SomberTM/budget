@@ -12,9 +12,10 @@ import (
 type PlaidService interface {
 	GetPlaidItemAccounts(ctx context.Context, item models.PlaidItem) ([]plaid.AccountBase, error)
 	GetUserAccounts(ctx context.Context, user models.User) ([]plaid.AccountBase, error)
+	GetPlaidItemTransactions(ctx context.Context, item models.PlaidItem) ([]plaid.Transaction, error)
+	GetUserTransactions(ctx context.Context, userId string) ([]plaid.Transaction, error)
 	GetLinkTokenForUser(ctx context.Context, user models.User) (string, error)
 	ExchangePublicToken(ctx context.Context, user models.User, publicToken string) (models.PlaidItem, error)
-	// GetUserTransactions(user models.User) ([]plaid.Transaction, error)
 }
 
 type PlaidFreeService struct {
@@ -27,6 +28,7 @@ func NewPlaidFreeService(api *plaid.PlaidApiService, plaidItemsRepository reposi
 }
 
 var nilAccounts []plaid.AccountBase = []plaid.AccountBase{}
+var nilTransactions []plaid.Transaction = []plaid.Transaction{}
 
 func (s *PlaidFreeService) GetPlaidItemAccounts(ctx context.Context, i models.PlaidItem) ([]plaid.AccountBase, error) {
 	accountsGetRequest := plaid.NewAccountsGetRequest(i.AccessToken)
@@ -56,6 +58,55 @@ func (s *PlaidFreeService) GetUserAccounts(ctx context.Context, user models.User
 	}
 
 	return accounts, nil
+}
+
+func (s *PlaidFreeService) GetPlaidItemTransactions(ctx context.Context, i models.PlaidItem) ([]plaid.Transaction, error) {
+	var transactions []plaid.Transaction
+	var cursor string
+
+	hasMore := true
+	for hasMore {
+		request := plaid.NewTransactionsSyncRequest(i.AccessToken)
+		if cursor != "" {
+			request.SetCursor(cursor)
+		}
+
+		resp, _, err := s.api.TransactionsSync(
+			ctx,
+		).TransactionsSyncRequest(*request).Execute()
+		if err != nil {
+			return []plaid.Transaction{}, err
+		}
+
+		// Add this page of results
+		transactions = append(transactions, resp.GetAdded()...)
+		// modified = append(modified, resp.GetModified()...)
+		// removed = append(removed, resp.GetRemoved()...)
+
+		hasMore = resp.GetHasMore()
+		cursor = resp.GetNextCursor()
+	}
+
+	return transactions, nil
+}
+
+func (s *PlaidFreeService) GetUserTransactions(ctx context.Context, userId string) ([]plaid.Transaction, error) {
+	items, err := s.plaidItemsRepository.GetPlaidItemsByUserId(ctx, userId)
+	if err != nil {
+		return nilTransactions, err
+	}
+
+	transactions := make([]plaid.Transaction, 0, 20)
+	for i := 0; i < len(items); i++ {
+		itemTransactions, err := s.GetPlaidItemTransactions(ctx, items[i])
+		if err != nil {
+			return []plaid.Transaction{}, err
+		}
+
+		transactions = append(transactions, itemTransactions...)
+	}
+
+	return transactions, nil
 }
 
 func (s *PlaidFreeService) GetLinkTokenForUser(ctx context.Context, user models.User) (string, error) {
@@ -98,6 +149,12 @@ func (s *NilPlaidService) GetPlaidItemAccounts(ctx context.Context, i models.Pla
 }
 func (s *NilPlaidService) GetUserAccounts(ctx context.Context, user models.User) ([]plaid.AccountBase, error) {
 	return nilAccounts, nil
+}
+func (s *NilPlaidService) GetPlaidItemTransactions(ctx context.Context, i models.PlaidItem) ([]plaid.Transaction, error) {
+	return nilTransactions, nil
+}
+func (s *NilPlaidService) GetUserTransactions(ctx context.Context, userId string) ([]plaid.Transaction, error) {
+	return nilTransactions, nil
 }
 func (s *NilPlaidService) GetLinkTokenForUser(ctx context.Context, user models.User) (string, error) {
 	return "", nil
