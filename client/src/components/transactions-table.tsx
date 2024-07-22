@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { snakeCaseToTitleCase } from "@/lib/utils";
+import { cn, snakeCaseToTitleCase } from "@/lib/utils";
 
 export function TransactionsTable(props: { transactions: Transaction[] }) {
   return (
@@ -33,10 +33,17 @@ export function TransactionsTable(props: { transactions: Transaction[] }) {
                 )}
             </TableCell>
             <TableCell>
-              {transaction.datetime ?? transaction.authorized_datetime}
+              {transaction.datetime ?? transaction.date}
             </TableCell>
             <TableCell>
-              {transaction.amount}
+              <span
+                className={cn(
+                  transaction.amount < 0 ? "text-green-500" : "text-destructive"
+                )}
+              >
+                {transaction.amount < 0 ? "+" : "-"}
+                {Math.abs(transaction.amount)}
+              </span>
               <span className="text-xs text-muted-foreground">
                 {transaction.iso_currency_code}
               </span>

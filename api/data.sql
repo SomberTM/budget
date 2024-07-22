@@ -1,10 +1,12 @@
 -- drop table if exists transaction_categories_to_budget_definitions;
+-- drop table if exists transactions;
+-- drop table if exists transaction_cursors;
 -- drop table if exists transaction_categories;
 -- drop table if exists budget_definitions;
 -- drop table if exists budgets;
 -- drop table if exists plaid_items;
--- drop table if exists sessions;
--- drop table if exists users;
+-- drop table if exists "sessions";
+-- drop table if exists users cascade;
 
 create table if not exists users (
     id uuid primary key default gen_random_uuid(),
@@ -28,7 +30,7 @@ create table if not exists plaid_items (
 create table if not exists budgets (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references users(id) on delete cascade,
-    name text not null,
+    "name" text not null,
     color text
 );
 
@@ -36,15 +38,52 @@ create table if not exists budget_definitions (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references users(id) on delete cascade,
     budget_id uuid not null references budgets(id) on delete cascade,
-    name text not null,
+    "name" text not null,
     allocation int not null
+);
+
+create table if not exists transaction_cursors (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid unique not null references users(id) on delete cascade,
+    "cursor" varchar(256) not null
 );
 
 create table if not exists transaction_categories (
     id uuid primary key default gen_random_uuid(),
     "primary" text not null,
     detailed text unique not null,
-    description text unique not null
+    "description" text unique not null
+);
+
+create table if not exists transactions (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references users(id) on delete cascade,
+    account_id text unique not null,
+    amount numeric not null,
+    iso_currency_code text,
+    unofficial_currency_code text,
+    check_number text,
+    "date" date not null,
+    "datetime" timestamp,
+    "location" jsonb not null,
+    "name" text,
+    merchant_name text,
+    original_description text,
+    payment_meta jsonb not null,
+    pending boolean not null,
+    pending_transaction_id text,
+    account_owner text,
+    transaction_id text unique not null,
+    logo_url text,
+    website text,
+    authorized_date date,
+    authorized_datetime timestamp,
+    payment_channel text,
+    transaction_category_detailed text references transaction_categories(id) on delete cascade,
+    transaction_code text,
+    personal_finance_category_icon_url text,
+    counterparties jsonb,
+    merchant_entity_id text
 );
 
 create table if not exists transaction_categories_to_budget_definitions (

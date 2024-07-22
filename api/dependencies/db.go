@@ -1,20 +1,20 @@
 package dependencies
 
 import (
-	"context"
-	"database/sql"
 	"log"
 	"os"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Database interface {
 	Init(dataSourceName string) error
 	Migrate() error
-	GetConnection() *sql.DB
+	GetConnection() *sqlx.DB
 }
 
 type PostgresSql struct {
-	connection        *sql.DB
+	connection        *sqlx.DB
 	connectionString  string
 	migrationFileName string
 }
@@ -28,7 +28,7 @@ func (pg *PostgresSql) Init(dataSourceName string) error {
 	pg.migrationFileName = "data.sql"
 
 	var err error
-	pg.connection, err = sql.Open("postgres", pg.connectionString)
+	pg.connection, err = sqlx.Open("postgres", pg.connectionString)
 	if err != nil {
 		log.Printf("Error opening database connection: %v", err)
 		return err
@@ -46,7 +46,7 @@ func (pg *PostgresSql) Migrate() error {
 
 	raw, err := os.ReadFile(pg.migrationFileName)
 	if err != nil {
-		log.Printf("Error reading sql: %v", err)
+		log.Printf("Error reading migration file, no migrations applied: %v", err)
 		return err
 	}
 
@@ -55,26 +55,15 @@ func (pg *PostgresSql) Migrate() error {
 		return nil
 	}
 
-	ctx, rollbackTx := context.WithCancel(context.Background())
-	defer rollbackTx()
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		log.Printf("Error starting transaction: %v", err)
-		return err
-	}
-
-	_, err = db.Query(string(raw))
-	if err != nil {
-		log.Printf("Error running migration, rolling back: %v", err)
-		return err
-	}
-
+	tx := db.MustBegin()
+	tx.MustExec(string(raw))
 	tx.Commit()
+
 	log.Println("Migrations complete")
 	return nil
 }
 
-func (pg *PostgresSql) GetConnection() *sql.DB {
+func (pg *PostgresSql) GetConnection() *sqlx.DB {
 	return pg.connection
 }
 
@@ -82,4 +71,4 @@ type NilDatabase struct{}
 
 func (db *NilDatabase) Init(dataSourceName string) error { return nil }
 func (db *NilDatabase) Migrate() error                   { return nil }
-func (db *NilDatabase) GetConnection() *sql.DB           { return nil }
+func (db *NilDatabase) GetConnection() *sqlx.DB           { return nil }

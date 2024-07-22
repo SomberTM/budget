@@ -112,6 +112,8 @@ func (s *PlaidFreeService) GetUserTransactions(ctx context.Context, userId strin
 func (s *PlaidFreeService) GetLinkTokenForUser(ctx context.Context, user models.User) (string, error) {
 	request := plaid.NewLinkTokenCreateRequest("Plaid Test App", "en", []plaid.CountryCode{plaid.COUNTRYCODE_US}, *plaid.NewLinkTokenCreateRequestUser(user.Id))
 	request.SetProducts([]plaid.Products{plaid.PRODUCTS_AUTH, plaid.PRODUCTS_TRANSACTIONS})
+	request.Transactions = plaid.NewLinkTokenTransactions()
+	request.Transactions.SetDaysRequested(730)
 
 	response, _, err := s.api.LinkTokenCreate(ctx).LinkTokenCreateRequest(*request).Execute()
 	if err != nil {

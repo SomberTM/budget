@@ -69,7 +69,7 @@ function Budget() {
                   <DialogTrigger asChild>
                     <Button variant="outline">View Transactions</Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-[75dvw]">
+                  <DialogContent className="max-w-[90dvw] max-h-[80dvh] overflow-auto">
                     <DialogHeader>
                       <DialogTitle>
                         <span className="text-muted-foreground">
@@ -79,20 +79,10 @@ function Budget() {
                       </DialogTitle>
                     </DialogHeader>
                     <TransactionsTable
-                      transactions={definition.associated_transactions}
+                      transactions={definition.associated_transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())}
                     />
                   </DialogContent>
                 </Dialog>
-                // <Accordion type="multiple" className="mt-auto">
-                //   <AccordionItem value="transactions" className="border-none">
-                //     <AccordionTrigger>Transactions</AccordionTrigger>
-                //     <AccordionContent>
-                //       <TransactionsTable
-                //         transactions={definition.associated_transactions}
-                //       />
-                //     </AccordionContent>
-                //   </AccordionItem>
-                // </Accordion>
               )}
             </CardContent>
           </Card>

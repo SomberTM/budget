@@ -52,7 +52,8 @@ func init() {
 	}
 	env.Database = db
 
-	plaid := dependencies.NewPlaidSandbox()
+	// plaid := dependencies.NewPlaidSandbox()
+	plaid := dependencies.NewPlaidProduction()
 	plaid.SetClientId(plaidClientId)
 	plaid.SetClientSecret(plaidSecret)
 	plaid.Init()
@@ -64,6 +65,7 @@ func init() {
 	repos.Sessions = repositories.NewDatabaseSessionsRepository(db)
 	repos.TransactionCategories = repositories.NewDatabaseTransactionCategoriesRepository(db)
 	repos.Budgeting = repositories.NewDatabaseBudgetingRepository(db)
+	repos.Transactions = repositories.NewDatabaseTransactionsRepository(db)
 	env.Repositories = repos
 
 	servs := services.GetNilServices()

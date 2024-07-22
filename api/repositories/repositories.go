@@ -6,6 +6,7 @@ type Repositories struct {
 	PlaidItems            PlaidItemsRepository
 	TransactionCategories TransactionCategoriesRepository
 	Budgeting             BudgetingRepository
+	Transactions          TransactionsRepository
 }
 
 func GetNilRepositories() *Repositories {
@@ -15,5 +16,6 @@ func GetNilRepositories() *Repositories {
 		PlaidItems:            &NilPlaidItemsRepository{},
 		TransactionCategories: &NilTransactionCategoriesRepository{},
 		Budgeting:             &NilBudgetingRepository{},
+		Transactions:          &NilTransactionsRepository{},
 	}
 }
