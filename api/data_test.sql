@@ -61,7 +61,7 @@ create table if not exists transactions (
     item_id uuid not null references plaid_items(id) on delete cascade,
     transaction_category_detailed text references transaction_categories(detailed) on delete cascade,
     -- fields pulled out from "data"
-    account_id text unique not null,
+    account_id text not null,
     transaction_id text unique not null,
     amount numeric not null,
     "date" date not null,
