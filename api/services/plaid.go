@@ -12,23 +12,26 @@ import (
 type PlaidService interface {
 	GetPlaidItemAccounts(ctx context.Context, item models.PlaidItem) ([]plaid.AccountBase, error)
 	GetUserAccounts(ctx context.Context, user models.User) ([]plaid.AccountBase, error)
-	GetPlaidItemTransactions(ctx context.Context, item models.PlaidItem) ([]plaid.Transaction, error)
-	GetUserTransactions(ctx context.Context, userId string) ([]plaid.Transaction, error)
+	GetPlaidItemTransactions(ctx context.Context, item models.PlaidItem) ([]models.Transaction, error)
+	GetUserTransactions(ctx context.Context, userId string) ([]models.Transaction, error)
+	SyncPlaidItemTransactions(ctx context.Context, item models.PlaidItem) error
+	SyncUserTransactions(ctx context.Context, userId string) error
 	GetLinkTokenForUser(ctx context.Context, user models.User) (string, error)
 	ExchangePublicToken(ctx context.Context, user models.User, publicToken string) (models.PlaidItem, error)
 }
 
 type PlaidFreeService struct {
-	api                  *plaid.PlaidApiService
-	plaidItemsRepository repositories.PlaidItemsRepository
+	api                    *plaid.PlaidApiService
+	plaidItemsRepository   repositories.PlaidItemsRepository
+	transactionsRepository repositories.TransactionsRepository
 }
 
-func NewPlaidFreeService(api *plaid.PlaidApiService, plaidItemsRepository repositories.PlaidItemsRepository) *PlaidFreeService {
-	return &PlaidFreeService{api: api, plaidItemsRepository: plaidItemsRepository}
+func NewPlaidFreeService(api *plaid.PlaidApiService, plaidItemsRepository repositories.PlaidItemsRepository, transactionsRepository repositories.TransactionsRepository) *PlaidFreeService {
+	return &PlaidFreeService{api: api, plaidItemsRepository: plaidItemsRepository, transactionsRepository: transactionsRepository}
 }
 
 var nilAccounts []plaid.AccountBase = []plaid.AccountBase{}
-var nilTransactions []plaid.Transaction = []plaid.Transaction{}
+var nilTransactions []models.Transaction = []models.Transaction{}
 
 func (s *PlaidFreeService) GetPlaidItemAccounts(ctx context.Context, i models.PlaidItem) ([]plaid.AccountBase, error) {
 	accountsGetRequest := plaid.NewAccountsGetRequest(i.AccessToken)
@@ -60,13 +63,32 @@ func (s *PlaidFreeService) GetUserAccounts(ctx context.Context, user models.User
 	return accounts, nil
 }
 
-func (s *PlaidFreeService) GetPlaidItemTransactions(ctx context.Context, i models.PlaidItem) ([]plaid.Transaction, error) {
-	var transactions []plaid.Transaction
+func (s *PlaidFreeService) GetPlaidItemTransactions(ctx context.Context, i models.PlaidItem) ([]models.Transaction, error) {
+	return s.transactionsRepository.GetTransactionsForItem(ctx, i.Id)
+}
+
+func (s *PlaidFreeService) GetUserTransactions(ctx context.Context, userId string) ([]models.Transaction, error) {
+	return s.transactionsRepository.GetTransactionsForUser(ctx, userId)
+}
+
+func (s *PlaidFreeService) SyncPlaidItemTransactions(ctx context.Context, item models.PlaidItem) error {
+	var added []plaid.Transaction
+	var modified []plaid.Transaction
+	var removed []plaid.RemovedTransaction
+
+	savedCursor, err := s.transactionsRepository.GetTransactionCursorForUser(ctx, item.UserId)
+	if err != nil {
+		return err
+	}
+
 	var cursor string
+	if savedCursor != nil {
+		cursor = savedCursor.Cursor
+	}
 
 	hasMore := true
 	for hasMore {
-		request := plaid.NewTransactionsSyncRequest(i.AccessToken)
+		request := plaid.NewTransactionsSyncRequest(item.AccessToken)
 		if cursor != "" {
 			request.SetCursor(cursor)
 		}
@@ -75,38 +97,47 @@ func (s *PlaidFreeService) GetPlaidItemTransactions(ctx context.Context, i model
 			ctx,
 		).TransactionsSyncRequest(*request).Execute()
 		if err != nil {
-			return []plaid.Transaction{}, err
+			return err
 		}
 
 		// Add this page of results
-		transactions = append(transactions, resp.GetAdded()...)
-		// modified = append(modified, resp.GetModified()...)
-		// removed = append(removed, resp.GetRemoved()...)
+		added = append(added, resp.GetAdded()...)
+		modified = append(modified, resp.GetModified()...)
+		removed = append(removed, resp.GetRemoved()...)
 
 		hasMore = resp.GetHasMore()
 		cursor = resp.GetNextCursor()
 	}
 
-	return transactions, nil
+	// log.Printf("%v %v %v", added, modified, removed)
+
+	s.transactionsRepository.UpsertTransactionCursorForUser(ctx, item.UserId, cursor)
+	s.transactionsRepository.AddTransactions(ctx, models.NewTransactionsForItem(added, item))
+	s.transactionsRepository.ModifyTransactions(ctx, models.NewTransactionsForItem(modified, item))
+
+	transactionIds := make([]string, len(removed))
+	for i := 0; i < len(removed); i++ {
+		transactionIds = append(transactionIds, removed[i].GetTransactionId())
+	}
+	s.transactionsRepository.DeleteTransactions(ctx, transactionIds)
+
+	return nil
 }
 
-func (s *PlaidFreeService) GetUserTransactions(ctx context.Context, userId string) ([]plaid.Transaction, error) {
+func (s *PlaidFreeService) SyncUserTransactions(ctx context.Context, userId string) error {
 	items, err := s.plaidItemsRepository.GetPlaidItemsByUserId(ctx, userId)
 	if err != nil {
-		return nilTransactions, err
+		return err
 	}
 
-	transactions := make([]plaid.Transaction, 0, 20)
 	for i := 0; i < len(items); i++ {
-		itemTransactions, err := s.GetPlaidItemTransactions(ctx, items[i])
+		err := s.SyncPlaidItemTransactions(ctx, items[i])
 		if err != nil {
-			return []plaid.Transaction{}, err
+			return err
 		}
-
-		transactions = append(transactions, itemTransactions...)
 	}
 
-	return transactions, nil
+	return nil
 }
 
 func (s *PlaidFreeService) GetLinkTokenForUser(ctx context.Context, user models.User) (string, error) {
@@ -152,11 +183,17 @@ func (s *NilPlaidService) GetPlaidItemAccounts(ctx context.Context, i models.Pla
 func (s *NilPlaidService) GetUserAccounts(ctx context.Context, user models.User) ([]plaid.AccountBase, error) {
 	return nilAccounts, nil
 }
-func (s *NilPlaidService) GetPlaidItemTransactions(ctx context.Context, i models.PlaidItem) ([]plaid.Transaction, error) {
+func (s *NilPlaidService) GetPlaidItemTransactions(ctx context.Context, i models.PlaidItem) ([]models.Transaction, error) {
 	return nilTransactions, nil
 }
-func (s *NilPlaidService) GetUserTransactions(ctx context.Context, userId string) ([]plaid.Transaction, error) {
+func (s *NilPlaidService) GetUserTransactions(ctx context.Context, userId string) ([]models.Transaction, error) {
 	return nilTransactions, nil
+}
+func (s *NilPlaidService) SyncPlaidItemTransactions(ctx context.Context, item models.PlaidItem) error {
+	return nil
+}
+func (s *NilPlaidService) SyncUserTransactions(ctx context.Context, userId string) error {
+	return nil
 }
 func (s *NilPlaidService) GetLinkTokenForUser(ctx context.Context, user models.User) (string, error) {
 	return "", nil

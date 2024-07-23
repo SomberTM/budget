@@ -5,11 +5,12 @@ import (
 	"os"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type Database interface {
 	Init(dataSourceName string) error
-	Migrate() error
+	Migrate(file *string) error
 	GetConnection() *sqlx.DB
 }
 
@@ -37,11 +38,15 @@ func (pg *PostgresSql) Init(dataSourceName string) error {
 	return nil
 }
 
-func (pg *PostgresSql) Migrate() error {
+func (pg *PostgresSql) Migrate(file *string) error {
 	db := pg.GetConnection()
 
 	if db == nil {
 		log.Fatalf("No database connection open, failed to migrate.")
+	}
+
+	if file != nil {
+		pg.migrationFileName = *file
 	}
 
 	raw, err := os.ReadFile(pg.migrationFileName)
@@ -70,5 +75,5 @@ func (pg *PostgresSql) GetConnection() *sqlx.DB {
 type NilDatabase struct{}
 
 func (db *NilDatabase) Init(dataSourceName string) error { return nil }
-func (db *NilDatabase) Migrate() error                   { return nil }
-func (db *NilDatabase) GetConnection() *sqlx.DB           { return nil }
+func (db *NilDatabase) Migrate(file *string) error       { return nil }
+func (db *NilDatabase) GetConnection() *sqlx.DB          { return nil }

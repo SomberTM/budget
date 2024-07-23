@@ -13,7 +13,7 @@ type BudgetDefinitionBreakdown struct {
 	models.BudgetDefinition
 	Usage                  int64                        `json:"usage"`
 	Categories             []models.TransactionCategory `json:"categories"`
-	AssociatedTransactions []plaid.Transaction          `json:"associated_transactions"`
+	AssociatedTransactions []models.Transaction         `json:"associated_transactions"`
 }
 
 type BudgetBreakdown struct {
@@ -49,6 +49,11 @@ func (s *PrimaryBudgetingService) GetBudgetBreakdown(ctx context.Context, budget
 		return BudgetBreakdown{}, err
 	}
 
+	err = s.plaidService.SyncUserTransactions(ctx, userId)
+	if err != nil {
+		return BudgetBreakdown{}, err
+	}
+
 	transactions, err := s.plaidService.GetUserTransactions(ctx, userId)
 	if err != nil {
 		return BudgetBreakdown{}, err
@@ -73,15 +78,15 @@ func (s *PrimaryBudgetingService) GetBudgetBreakdown(ctx context.Context, budget
 		definitionBreakdown.Usage = 0
 		definitionBreakdown.Categories = categories
 
-		definitionBreakdown.AssociatedTransactions = make([]plaid.Transaction, 0)
+		definitionBreakdown.AssociatedTransactions = make([]models.Transaction, 0)
 
 		for j := 0; j < len(definitionBreakdown.Categories); j++ {
 			category := definitionBreakdown.Categories[j]
 			for k := 0; k < len(transactions); k++ {
 				transaction := transactions[k]
-				if pfc := transaction.PersonalFinanceCategory.Get(); pfc != nil {
-					if pfc.Detailed == category.Detailed {
-						definitionBreakdown.Usage += int64(transaction.GetAmount() * 100)
+				if transaction.TransactionCategoryDetailed.Valid {
+					if transaction.TransactionCategoryDetailed.String == category.Detailed {
+						definitionBreakdown.Usage += int64(transaction.Amount * 100)
 						definitionBreakdown.AssociatedTransactions = append(definitionBreakdown.AssociatedTransactions, transaction)
 					}
 				}

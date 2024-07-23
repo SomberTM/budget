@@ -46,14 +46,14 @@ func init() {
 		log.Fatal("Failed to initialize database")
 	}
 
-	err = db.Migrate()
+	err = db.Migrate(nil)
 	if err != nil {
 		log.Fatal("Failed to migrate database")
 	}
 	env.Database = db
 
-	// plaid := dependencies.NewPlaidSandbox()
-	plaid := dependencies.NewPlaidProduction()
+	plaid := dependencies.NewPlaidSandbox()
+	// plaid := dependencies.NewPlaidProduction()
 	plaid.SetClientId(plaidClientId)
 	plaid.SetClientSecret(plaidSecret)
 	plaid.Init()
@@ -69,7 +69,7 @@ func init() {
 	env.Repositories = repos
 
 	servs := services.GetNilServices()
-	servs.Plaid = services.NewPlaidFreeService(plaid.GetApiService(), repos.PlaidItems)
+	servs.Plaid = services.NewPlaidFreeService(plaid.GetApiService(), repos.PlaidItems, repos.Transactions)
 	servs.Users = services.NewSessionStrategyUsersService(repos.Users, repos.Sessions)
 	servs.Budgeting = services.NewPrimaryBudgetingService(plaid.GetApiService(), repos.Budgeting, servs.Plaid)
 	env.Services = servs
