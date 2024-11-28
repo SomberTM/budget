@@ -6,22 +6,17 @@ import (
 	"context"
 )
 
-type PlaidItemsRepository interface {
-	GetPlaidItemsByUserId(ctx context.Context, userId string) ([]models.PlaidItem, error)
-	CreatePlaidItem(ctx context.Context, i models.PlaidItem) (models.PlaidItem, error)
-}
-
-type DatabasePlaidItemsRepository struct {
+type PlaidItemsRepository struct {
 	db dependencies.Database
 }
 
-func NewDatabasePlaidItemsRepository(db dependencies.Database) *DatabasePlaidItemsRepository {
-	return &DatabasePlaidItemsRepository{db: db}
+func NewDatabasePlaidItemsRepository(db dependencies.Database) *PlaidItemsRepository {
+	return &PlaidItemsRepository{db: db}
 }
 
 var nilPlaidItems []models.PlaidItem = []models.PlaidItem{}
 
-func (r *DatabasePlaidItemsRepository) GetPlaidItemsByUserId(ctx context.Context, userId string) ([]models.PlaidItem, error) {
+func (r *PlaidItemsRepository) GetPlaidItemsByUserId(ctx context.Context, userId string) ([]models.PlaidItem, error) {
 	rows, err := r.db.GetConnection().QueryContext(ctx, "SELECT * FROM plaid_items WHERE user_id = $1", userId)
 	if err != nil {
 		return nilPlaidItems, err
@@ -39,20 +34,11 @@ func (r *DatabasePlaidItemsRepository) GetPlaidItemsByUserId(ctx context.Context
 	return items, nil
 }
 
-func (r *DatabasePlaidItemsRepository) CreatePlaidItem(ctx context.Context, i models.PlaidItem) (models.PlaidItem, error) {
-	row := r.db.GetConnection().QueryRowContext(ctx, "INSERT INTO plaid_items (id, user_id, item_id, access_token) VALUES (default, $1, $2, $3) RETURNING id", i.UserId, i.ItemId, i.AccessToken)
+func (r *PlaidItemsRepository) CreatePlaidItem(ctx context.Context, i models.PlaidItem) (models.PlaidItem, error) {
+	row := r.db.GetConnection().QueryRowContext(ctx, "INSERT INTO plaid_items (id, user_id, item_id, institution_id, institution_name, access_token, raw_plaid_data) VALUES (default, $1, $2, $3, $4, $5, $6) RETURNING id", i.UserId, i.ItemId, i.InstitutionId, i.InstitutionName, i.AccessToken, i.RawPlaidData)
 	if err := row.Scan(&i.Id); err != nil {
 		return i, err
 	}
 
-	return i, nil
-}
-
-type NilPlaidItemsRepository struct{}
-
-func (r *NilPlaidItemsRepository) GetPlaidItemsByUserId(ctx context.Context, userId string) ([]models.PlaidItem, error) {
-	return nilPlaidItems, nil
-}
-func (r *NilPlaidItemsRepository) CreatePlaidItem(ctx context.Context, i models.PlaidItem) (models.PlaidItem, error) {
 	return i, nil
 }

@@ -12,7 +12,7 @@ func RequireLoggedInUser(e *environment.Environment, c *gin.Context) {
 	sessionId, idErr := c.Cookie("session_id")
 	sessionToken, tokErr := c.Cookie("session_token")
 	if tokErr != nil || sessionToken == "" || idErr != nil || sessionId == "" {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "no user"})
 		return
 	}
 

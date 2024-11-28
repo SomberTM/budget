@@ -24,7 +24,7 @@ export function PlaidLinkButton() {
   const { ready, open } = usePlaidLink({
     token: linkTokenQuery.data ?? "",
     onSuccess,
-    env: "production",
+    env: "sandbox",
   });
 
   return (

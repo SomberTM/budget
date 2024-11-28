@@ -12,7 +12,7 @@ import {
 } from "./ui/form";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Budget, createBudget } from "@/api/budgeting";
 
 const formSchema = z.object({
@@ -31,9 +31,13 @@ export function BudgetForm() {
     },
   });
 
+  const queryClient = useQueryClient();
   const createBudgetMutation = useMutation({
     mutationKey: ["create-budget"],
-    mutationFn: (budget: Budget) => createBudget(budget),
+    mutationFn: async (budget: Budget) => {
+      await createBudget(budget);
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+    },
   });
 
   async function onSubmit(values: FormSchema) {

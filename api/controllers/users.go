@@ -55,7 +55,7 @@ func Logout(e *environment.Environment, c *gin.Context) {
 func Me(c *gin.Context) {
 	value, authorized := c.Get("user")
 	if !authorized {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "message": "No user"})
 		return
 	}
 

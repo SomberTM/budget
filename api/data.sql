@@ -24,22 +24,14 @@ create table if not exists plaid_items (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references users(id) on delete cascade,
     item_id text not null,
-    access_token text not null
-);
+    institution_id text not null,
+    institution_name text not null,
+    created_at timestamp not null default now(),
+    modified_at timestamp,
 
-create table if not exists budgets (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references users(id) on delete cascade,
-    "name" text not null,
-    color text
-);
-
-create table if not exists budget_definitions (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references users(id) on delete cascade,
-    budget_id uuid not null references budgets(id) on delete cascade,
-    "name" text not null,
-    allocation int not null
+    -- Shouldn't store this in plain text if at all 
+    access_token text not null,
+    raw_plaid_data jsonb not null
 );
 
 create table if not exists transaction_cursors (
@@ -67,37 +59,6 @@ create table if not exists transactions (
     "date" date not null,
 
     data jsonb not null
-    -- account_id text unique not null,
-    -- amount numeric not null,
-    -- iso_currency_code text,
-    -- unofficial_currency_code text,
-    -- check_number text,
-    -- "date" date not null,
-    -- "datetime" timestamp,
-    -- "location" jsonb not null,
-    -- "name" text,
-    -- merchant_name text,
-    -- original_description text,
-    -- payment_meta jsonb not null,
-    -- pending boolean not null,
-    -- pending_transaction_id text,
-    -- account_owner text,
-    -- transaction_id text unique not null,
-    -- logo_url text,
-    -- website text,
-    -- authorized_date date,
-    -- authorized_datetime timestamp,
-    -- payment_channel text,
-    -- transaction_code text,
-    -- personal_finance_category_icon_url text,
-    -- counterparties jsonb,
-    -- merchant_entity_id text
-);
-
-create table if not exists transaction_categories_to_budget_definitions (
-    id uuid primary key default gen_random_uuid(),
-    definition_id uuid not null references budget_definitions(id) on delete cascade,
-    category_id uuid not null references transaction_categories(id) on delete cascade
 );
 
 -- Seed categories based off of csv found here https://plaid.com/docs/api/products/transactions/#categoriesget

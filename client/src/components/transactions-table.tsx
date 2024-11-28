@@ -14,7 +14,6 @@ export function TransactionsTable(props: { transactions: Transaction[] }) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
           <TableHead>Merchant Name</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Date</TableHead>
@@ -24,7 +23,6 @@ export function TransactionsTable(props: { transactions: Transaction[] }) {
       <TableBody>
         {props.transactions.map((transaction) => (
           <TableRow key={transaction.transaction_id}>
-            <TableCell>{transaction.name}</TableCell>
             <TableCell>{transaction.merchant_name}</TableCell>
             <TableCell>
               {transaction.personal_finance_category &&
@@ -32,9 +30,7 @@ export function TransactionsTable(props: { transactions: Transaction[] }) {
                   transaction.personal_finance_category.detailed
                 )}
             </TableCell>
-            <TableCell>
-              {transaction.datetime ?? transaction.date}
-            </TableCell>
+            <TableCell>{transaction.datetime ?? transaction.date}</TableCell>
             <TableCell>
               <span
                 className={cn(

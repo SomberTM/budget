@@ -10,6 +10,7 @@ import (
 )
 
 type TransactionsRepository interface {
+	GetTransactionsForAccount(ctx context.Context, accountId string) ([]models.Transaction, error)
 	GetTransactionsForItem(ctx context.Context, itemId string) ([]models.Transaction, error)
 	GetTransactionsForUser(ctx context.Context, userId string) ([]models.Transaction, error)
 	GetTransactionCursorForUser(ctx context.Context, userId string) (*models.TransactionCursor, error)
@@ -25,6 +26,16 @@ type DatabaseTransactionsRepository struct {
 
 func NewDatabaseTransactionsRepository(db dependencies.Database) *DatabaseTransactionsRepository {
 	return &DatabaseTransactionsRepository{db: db}
+}
+
+func (r *DatabaseTransactionsRepository) GetTransactionsForAccount(ctx context.Context, accountId string) ([]models.Transaction, error) {
+	transactions := []models.Transaction{}
+	err := r.db.GetConnection().SelectContext(ctx, &transactions, "SELECT * FROM transactions WHERE account_id = $1", accountId)
+	if err != nil {
+		return []models.Transaction{}, err
+	}
+
+	return transactions, nil
 }
 
 func (r *DatabaseTransactionsRepository) GetTransactionsForItem(ctx context.Context, itemId string) ([]models.Transaction, error) {
@@ -152,6 +163,9 @@ func (r *DatabaseTransactionsRepository) DeleteTransactions(ctx context.Context,
 
 type NilTransactionsRepository struct{}
 
+func (r *NilTransactionsRepository) GetTransactionsForAccount(ctx context.Context, accountId string) ([]models.Transaction, error) {
+	return []models.Transaction{}, nil
+}
 func (r *NilTransactionsRepository) GetTransactionsForItem(ctx context.Context, itemId string) ([]models.Transaction, error) {
 	return []models.Transaction{}, nil
 }

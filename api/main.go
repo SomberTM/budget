@@ -60,18 +60,15 @@ func init() {
 	env.Plaid = plaid
 
 	repos := repositories.GetNilRepositories()
-	repos.Users = repositories.NewDatabaseUsersRepository(db)
+	repos.Users = repositories.NewUsersRepository(db)
 	repos.PlaidItems = repositories.NewDatabasePlaidItemsRepository(db)
 	repos.Sessions = repositories.NewDatabaseSessionsRepository(db)
-	repos.TransactionCategories = repositories.NewDatabaseTransactionCategoriesRepository(db)
-	repos.Budgeting = repositories.NewDatabaseBudgetingRepository(db)
 	repos.Transactions = repositories.NewDatabaseTransactionsRepository(db)
 	env.Repositories = repos
 
 	servs := services.GetNilServices()
-	servs.Plaid = services.NewPlaidFreeService(plaid.GetApiService(), repos.PlaidItems, repos.Transactions)
-	servs.Users = services.NewSessionStrategyUsersService(repos.Users, repos.Sessions)
-	servs.Budgeting = services.NewPrimaryBudgetingService(plaid.GetApiService(), repos.Budgeting, servs.Plaid)
+	servs.Plaid = services.NewPlaidService(plaid.GetApiService(), repos.PlaidItems, repos.Transactions)
+	servs.Users = services.NewSessionStrategyUsersService(*repos.Users, repos.Sessions)
 	env.Services = servs
 
 	router = gin.Default()
@@ -90,23 +87,13 @@ func main() {
 		authorized.POST("/link/exchange", environmentInjector(controllers.ExchangePublicToken))
 
 		authorized.GET("/user-accounts", environmentInjector(controllers.GetAccounts))
-		// authorized.GET("/transactions", controllers.GetTransactions)
-		authorized.GET("/ubudgeting/budgets", environmentInjector(controllers.MyBudgets))
-		authorized.POST("/ubudgeting/budgets", environmentInjector(controllers.CreateBudget))
-		authorized.GET("/ubudgeting/budgets/:budgetId/breakdown", environmentInjector(controllers.BudgetBreakdown))
-		authorized.POST("/ubudgeting/budgets/:budgetId/definitions", environmentInjector(controllers.CreateBudgetDefinition))
+		authorized.GET("/accounts/:accountId/transactions", environmentInjector(controllers.AccountTransactions))
 	}
 
 	authorization := router.Group("/auth")
 	{
 		authorization.POST("/login", environmentInjector(controllers.Login))
 		authorization.POST("/logout", environmentInjector(controllers.Logout))
-	}
-
-	budgeting := router.Group("/budgeting")
-	{
-		budgeting.GET("/categories", environmentInjector(controllers.TransactionCategories))
-
 	}
 
 	router.Run("localhost:8080")

@@ -7,23 +7,17 @@ import (
 	"database/sql"
 )
 
-type UsersRepository interface {
-	GetUser(ctx context.Context, userId string) (models.User, bool, error)
-	GetUserByUserName(ctx context.Context, userName string) (models.User, bool, error)
-	CreateUser(ctx context.Context, user models.User) (models.User, error)
-}
-
-type DatabaseUsersRepository struct {
+type UsersRepository struct {
 	db dependencies.Database
 }
 
-func NewDatabaseUsersRepository(db dependencies.Database) *DatabaseUsersRepository {
-	return &DatabaseUsersRepository{db: db}
+func NewUsersRepository(db dependencies.Database) *UsersRepository {
+	return &UsersRepository{db: db}
 }
 
 var nilUser models.User = models.User{}
 
-func (r *DatabaseUsersRepository) GetUser(ctx context.Context, userId string) (models.User, bool, error) {
+func (r *UsersRepository) GetUser(ctx context.Context, userId string) (models.User, bool, error) {
 	var user models.User
 	row := r.db.GetConnection().QueryRowContext(ctx, "SELECT * FROM users WHERE id = $1", userId)
 	if err := row.Scan(&user.Id, &user.UserName, &user.PasswordHash); err != nil {
@@ -37,7 +31,7 @@ func (r *DatabaseUsersRepository) GetUser(ctx context.Context, userId string) (m
 	return user, true, nil
 }
 
-func (r *DatabaseUsersRepository) GetUserByUserName(ctx context.Context, userName string) (models.User, bool, error) {
+func (r *UsersRepository) GetUserByUserName(ctx context.Context, userName string) (models.User, bool, error) {
 	var user models.User
 	row := r.db.GetConnection().QueryRowContext(ctx, "SELECT * FROM users WHERE user_name = $1", userName)
 	if err := row.Scan(&user.Id, &user.UserName, &user.PasswordHash); err != nil {
@@ -51,23 +45,11 @@ func (r *DatabaseUsersRepository) GetUserByUserName(ctx context.Context, userNam
 	return user, true, nil
 }
 
-func (r *DatabaseUsersRepository) CreateUser(ctx context.Context, user models.User) (models.User, error) {
+func (r *UsersRepository) CreateUser(ctx context.Context, user models.User) (models.User, error) {
 	row := r.db.GetConnection().QueryRowContext(ctx, "INSERT INTO users (id, user_name, password_hash) VALUES (default, $1, $2) RETURNING id", user.UserName, user.PasswordHash)
 	if err := row.Scan(&user.Id); err != nil {
 		return nilUser, err
 	}
 
 	return user, nil
-}
-
-type NilUsersRepository struct{}
-
-func (r *NilUsersRepository) GetUser(ctx context.Context, userId string) (models.User, bool, error) {
-	return nilUser, false, nil
-}
-func (r *NilUsersRepository) GetUserByUserName(ctx context.Context, userName string) (models.User, bool, error) {
-	return nilUser, false, nil
-}
-func (r *NilUsersRepository) CreateUser(ctx context.Context, user models.User) (models.User, error) {
-	return nilUser, nil
 }

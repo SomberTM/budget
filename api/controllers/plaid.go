@@ -56,26 +56,10 @@ func GetAccounts(e *environment.Environment, c *gin.Context) {
 
 	accounts, err := e.Services.Plaid.GetUserAccounts(c.Request.Context(), user)
 	if err != nil {
-		log.Printf("Error getting accounts: %v", err)
+		log.Printf("Error getting accounts: %s", err.Error())
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, accounts)
 }
-
-// func GetTransactions(c *gin.Context) {
-// 	user, ok := middleware.GetCurrentUser(c)
-// 	if !ok {
-// 		return
-// 	}
-
-// 	transactions, err := user.GetTransactions(c.Request.Context())
-// 	if err != nil {
-// 		log.Printf("Error getting transactions: %v", err)
-// 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, transactions)
-// }

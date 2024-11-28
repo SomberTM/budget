@@ -19,10 +19,14 @@ export async function getAccounts(
   return await response.json();
 }
 
-export async function getTransactions(
+export async function getAccountTransactions(
+  accountId: string,
   signal?: AbortSignal
 ): Promise<Transaction[]> {
-  const response = await fetch("/api/transactions", { signal, method: "GET" });
+  const response = await fetch(`/api/accounts/${accountId}/transactions`, {
+    signal,
+    method: "GET",
+  });
   if (!response.ok) return [];
   return await response.json();
 }

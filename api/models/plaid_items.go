@@ -1,31 +1,17 @@
 package models
 
-// "budget/api/environment"
+import "time"
 
 type PlaidItem struct {
-	Id          string
-	UserId      string
-	ItemId      string
-	AccessToken string
-}
-
-func NewPlaidItem() PlaidItem {
-	return PlaidItem{}
-}
-
-func (i *PlaidItem) SetUserId(userId string) *PlaidItem {
-	i.UserId = userId
-	return i
-}
-
-func (i *PlaidItem) SetItemId(itemId string) *PlaidItem {
-	i.ItemId = itemId
-	return i
-}
-
-func (i *PlaidItem) SetAccessToken(accessToken string) *PlaidItem {
-	i.AccessToken = accessToken
-	return i
+	Id              string
+	UserId          string
+	ItemId          string
+	InstitutionId   string
+	InstitutionName string
+	CreatedAt       time.Time
+	ModifiedAt      time.Time
+	AccessToken     string
+	RawPlaidData    string
 }
 
 // func (i *PlaidItem) GetAccounts(ctx context.Context) ([]plaid.AccountBase, error) {

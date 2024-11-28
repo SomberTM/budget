@@ -98,3 +98,27 @@ export async function getBudgetBreakdown(
   if (!response.ok) return;
   return response.json();
 }
+
+export async function getBudgetBreakdowns(
+  signal?: AbortSignal
+): Promise<BudgetBreakdown[]> {
+  const response = await fetch(`/api/ubudgeting/breakdowns`, {
+    signal,
+  });
+  if (!response.ok) return [];
+  return response.json();
+}
+
+export interface TransactionDataForDateRange {
+  label: string;
+  total: number;
+  count: number;
+}
+
+export async function getTransactionChartData(): Promise<
+  TransactionDataForDateRange[] | undefined
+> {
+  const response = await fetch("/api/transactions-chart");
+  if (!response.ok) return;
+  return response.json();
+}
